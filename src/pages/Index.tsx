@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Scan, Users, CheckCircle, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Scan, Users, CheckCircle, Shield, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CameraCapture } from '@/components/CameraCapture';
 import { ImagePreview } from '@/components/ImagePreview';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { AdminPanel } from '@/components/AdminPanel';
 import { useToast } from '@/hooks/use-toast';
 import heroImage from '@/assets/hero-image.jpg';
 
@@ -14,7 +15,24 @@ const Index = () => {
   const [appState, setAppState] = useState<AppState>('login');
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [user, setUser] = useState<string | null>(null);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [savePath, setSavePath] = useState('https://empresa.sharepoint.com/sites/Financeiro/Documentos/Aplicativos/AFScan');
   const { toast } = useToast();
+
+  // Carregar configurações do localStorage
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('afScanConfig');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        if (config.fullPath) {
+          setSavePath(config.fullPath);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    }
+  }, []);
 
   const handleLogin = () => {
     setAppState('loading');
@@ -105,6 +123,9 @@ const Index = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-muted-foreground">Olá, {user}</span>
+                    <Button variant="outline" size="sm" onClick={() => setIsAdminOpen(true)}>
+                      <Settings className="h-4 w-4" />
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => setAppState('login')}>
                       Sair
                     </Button>
@@ -241,7 +262,7 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground mt-4">
                     Seus documentos serão salvos em:
                     <br />
-                    <span className="font-medium">SharePoint → Financeiro → Aplicativos → AFScan</span>
+                    <span className="font-medium font-mono text-xs">{savePath}</span>
                   </p>
                 </div>
               </div>
@@ -251,7 +272,17 @@ const Index = () => {
     }
   };
 
-  return renderContent();
+  return (
+    <>
+      {renderContent()}
+      <AdminPanel
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        savePath={savePath}
+        onSavePathChange={setSavePath}
+      />
+    </>
+  );
 };
 
 export default Index;
